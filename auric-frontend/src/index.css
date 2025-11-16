@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+body {
+  @apply bg-auric-bg text-auric-text antialiased;
+}
+.glass {
+  @apply bg-auric-panel/60 backdrop-blur-xs shadow-glass border border-white/10 rounded-xl;
+}
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition;
+}
+.btn-gold {
+  @apply btn bg-auric-gold text-black hover:bg-auric-goldSoft;
+}
+.btn-outline {
+  @apply btn border border-auric-gold text-auric-gold hover:bg-auric-gold hover:text-black;
+}
+html { scroll-behavior: smooth; }
