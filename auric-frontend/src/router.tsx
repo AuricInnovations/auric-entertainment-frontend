@@ -6,7 +6,8 @@ import MyBookings from "./pages/MyBookings";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminGallery from "./pages/admin/AdminGallery";
-import EventDetail from "./pages/EventDetail"; 
+import EventDetail from "./pages/EventDetail";
+import AdminBookings from "./pages/admin/AdminBookings";
 
 export const router = createBrowserRouter([
   // Public landing → your premium App.tsx (hero + events + gallery + pricing + contact)
@@ -24,10 +25,10 @@ export const router = createBrowserRouter([
     path: "/bookings",
     element: <MyBookings />,
   },
-   // Event detail
+  // Event detail
   {
     path: "/events/:id",
-    element: <EventDetail />,                          // 👈 new route
+    element: <EventDetail />,
   },
 
   // Admin area
@@ -37,7 +38,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <div>Admin dashboard coming soon</div> },
       { path: "events", element: <AdminEvents /> },
-      { path: "gallery", element: <AdminGallery /> },
+      { path: "bookings", element: <AdminBookings /> },
+      { path: "gallery", element: <AdminGallery /> },      
     ],
   },
 ]);
