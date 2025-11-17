@@ -68,6 +68,7 @@ export default function AdminLayout() {
         <nav className="flex-1 text-sm space-y-1">
           <NavItem to="/admin" label="Dashboard" />
           <NavItem to="/admin/events" label="Events" />
+          <NavItem to="/admin/bookings" label="Bookings" />
           <NavItem to="/admin/gallery" label="Image gallery" />
         </nav>
 
