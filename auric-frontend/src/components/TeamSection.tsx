@@ -13,6 +13,11 @@ const TEAM: Member[] = [
         focus: "Leads overall event vision, key decisions, and stakeholder alignment.",
     },
     {
+        name: "Satrajit Banerjee",
+        role: "Chief Strategy Officer",
+        focus: "Leads overall event vision.",
+    },
+    {
         name: "Lakshika Sewwandi",
         role: "Finance & Event Strategist",
         focus: "Owns budgeting, ticketing strategy, and financial planning for each event.",
@@ -32,11 +37,11 @@ const TEAM: Member[] = [
         role: "Partner Alliance Executive",
         focus: "Secures sponsors and partners, and manages key external relationships.",
     },
-    // {
-    //     name: "Production Network",
-    //     role: "Sound, Light & Staging",
-    //     focus: "Trusted partners for staging, rigging, sound, and lighting.",
-    // },
+    {
+        name: "Hesara Kavinda",
+        role: "Event Executive",
+        focus: "Trusted partners for staging, rigging, sound, and lighting.",
+    },
 ];
 
 function initials(name: string) {

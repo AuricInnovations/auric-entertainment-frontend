@@ -6,6 +6,9 @@ import { useAuth } from "../state/AuthContext";
 type Booking = {
   id: number;
   eventId: number;
+  eventTitle?: string | null;
+  ticketTypeId?: number | null;
+  ticketTypeName?: string | null;
   fullName: string;
   email: string;
   phone: string;
@@ -107,7 +110,7 @@ export default function MyBookings() {
             >
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-yellow-200">
-                  Event #{b.eventId}
+                  {b.eventTitle ?? `Event #${b.eventId}`}
                 </p>
                 <p className="text-xs text-zinc-300">
                   Name: {b.fullName}

@@ -1,10 +1,17 @@
 // src/pages/EventDetail.tsx
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiFetch } from "../lib/api";
+import {
+  apiFetch,
+  ApiError,
+  publicGetTicketTypes,
+  TicketTypeResponse,
+  getEventAvailability,
+  TicketAvailabilityResponse,
+} from "../lib/api";
 import { useAuth } from "../state/AuthContext";
-import { useState } from "react";
-import type { EventItem } from "../types/Events";
+import { useState, useMemo } from "react";
+import { WhatsAppService } from "../lib/WhatsAppService";
 
 type EventDetailType = {
   id: number;
@@ -14,7 +21,7 @@ type EventDetailType = {
   startTime?: string;
   endTime?: string;
   capacity?: number;
-  price?: number;
+  price?: number | null;
 };
 
 function formatDateTime(start?: string, end?: string) {
@@ -53,39 +60,84 @@ export default function EventDetail() {
   const { id } = useParams();
   const { user } = useAuth();
 
-  const { data: event, isLoading, isError } = useQuery<EventDetailType>({
+  // ===== Event itself =====
+  const {
+    data: event,
+    isLoading: eventLoading,
+    isError: eventIsError,
+    error: eventError,
+  } = useQuery<EventDetailType, ApiError>({
     queryKey: ["event", id],
     queryFn: async () => {
       const res = await apiFetch(`/events/${id}`);
-      if (!res.ok) throw new Error(`Failed to load event ${id}`);
       return res.json();
     },
     enabled: !!id,
   });
+
+  // ===== Ticket categories for this event =====
+
+  const {
+    data: ticketTypes,
+    isLoading: ticketsLoading,
+    isError: ticketsIsError,
+    error: ticketsError,
+  } = useQuery<TicketTypeResponse[], ApiError>({
+    queryKey: ["event", id, "ticket-types"],
+    queryFn: async () => {
+      if (!id) throw new ApiError(400, "Missing event id");
+      return publicGetTicketTypes(Number(id));
+    },
+    enabled: !!id,
+  });
+  const [lastBooking, setLastBooking] = useState<any | null>(null);
 
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     phone: "",
     tickets: 1,
+    ticketTypeId: 0,
   });
 
-  const createBooking = useMutation({
+  // Pick default ticket type once data arrives
+  const effectiveTicketTypeId = useMemo(() => {
+    if (form.ticketTypeId) return form.ticketTypeId;
+    const first = ticketTypes?.[0];
+    return first ? first.id : 0;
+  }, [form.ticketTypeId, ticketTypes]);
+
+  const selectedTicketType = useMemo(
+    () => ticketTypes?.find((t) => t.id === effectiveTicketTypeId),
+    [ticketTypes, effectiveTicketTypeId]
+  );
+
+  // ===== Booking mutation =====
+  const createBooking = useMutation<any, ApiError>({
     mutationFn: async () => {
+      if (!id) throw new ApiError(400, "Missing event id");
+      if (!effectiveTicketTypeId)
+        throw new ApiError(400, "Please select a ticket category");
+
       const res = await apiFetch("/bookings", {
         method: "POST",
         body: JSON.stringify({
-          ...form,
           eventId: Number(id),
+          ticketTypeId: effectiveTicketTypeId,
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          tickets: form.tickets,
         }),
       });
-      if (!res.ok) throw new Error("Booking failed");
+
       return res.json();
     },
   });
 
-  const loading = isLoading;
+  const loading = eventLoading || ticketsLoading;
   const dateLabel = formatDateTime(event?.startTime, event?.endTime);
+  const disabled = !user || createBooking.isPending || !ticketTypes?.length;
 
   if (loading) {
     return (
@@ -95,16 +147,19 @@ export default function EventDetail() {
     );
   }
 
-  if (isError || !event) {
+  if (eventIsError || !event) {
+    const err = eventError as ApiError | undefined;
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 text-red-300">
-        Event not found.
+        <p className="font-semibold mb-1">Event not found.</p>
+        {err && (
+          <p className="text-xs text-red-400">
+            ({err.status}) {err.message}
+          </p>
+        )}
       </div>
     );
   }
-
-  const disabled = !user || createBooking.isPending;
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 text-zinc-100">
       {/* Back link */}
@@ -115,7 +170,6 @@ export default function EventDetail() {
         ← Back to events
       </button>
 
-      {/* Layout: info + booking */}
       <div className="grid gap-8 lg:grid-cols-[1.6fr_1.1fr] items-start">
         {/* LEFT: event info */}
         <div className="space-y-4">
@@ -153,10 +207,14 @@ export default function EventDetail() {
           <div className="grid gap-4 sm:grid-cols-3 text-xs text-zinc-300">
             <div className="rounded-2xl border border-yellow-500/30 bg-black/70 px-4 py-3">
               <p className="text-[11px] text-zinc-400 uppercase tracking-[0.2em] mb-1">
-                Ticket price
+                From
               </p>
               <p className="text-lg font-semibold text-yellow-300">
-                {event.price != null ? `RM ${event.price.toFixed(2)}` : "TBA"}
+                {selectedTicketType
+                  ? `RM ${selectedTicketType.price.toFixed(2)}`
+                  : event.price != null
+                    ? `RM ${event.price.toFixed(2)}`
+                    : "TBA"}
               </p>
             </div>
             <div className="rounded-2xl border border-yellow-500/20 bg-black/60 px-4 py-3">
@@ -173,7 +231,7 @@ export default function EventDetail() {
               </p>
               <p className="text-sm text-zinc-200">
                 {user
-                  ? "Sign in confirmed — you can book now."
+                  ? "Signed in — you can book now."
                   : "Login required before booking."}
               </p>
             </div>
@@ -184,8 +242,7 @@ export default function EventDetail() {
         <div className="rounded-2xl border border-yellow-500/35 bg-black/75 p-5 shadow-[0_0_40px_rgba(0,0,0,0.9)]">
           <h3 className="text-lg font-semibold mb-1">Book tickets</h3>
           <p className="text-[11px] text-zinc-400 mb-4">
-            Reserve seats for this event. You can adjust quantities later if
-            needed.
+            Choose a ticket category and reserve seats for this event.
           </p>
 
           {!user && (
@@ -193,6 +250,49 @@ export default function EventDetail() {
               You must be logged in to complete a booking.
             </p>
           )}
+
+          {ticketsIsError && (
+            <p className="mb-3 text-xs text-red-300 bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2">
+              Failed to load ticket categories.{" "}
+              {ticketsError && (
+                <span>
+                  ({ticketsError.status}) {ticketsError.message}
+                </span>
+              )}
+            </p>
+          )}
+
+          {/* Ticket category selector */}
+          <div className="mb-3">
+            <label className="block text-xs text-zinc-300 mb-1">
+              Ticket category
+            </label>
+            <select
+              className="w-full bg-neutral-900/90 p-2.5 rounded-lg border border-neutral-700 text-sm text-zinc-100 focus:outline-none focus:border-yellow-400"
+              value={effectiveTicketTypeId || ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  ticketTypeId: Number(e.target.value) || 0,
+                })
+              }
+              disabled={!ticketTypes || ticketTypes.length === 0}
+            >
+              {!ticketTypes?.length && (
+                <option value="">No categories configured</option>
+              )}
+              {ticketTypes?.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} — RM {t.price.toFixed(2)}
+                </option>
+              ))}
+            </select>
+            {selectedTicketType?.description && (
+              <p className="mt-1 text-[11px] text-zinc-400">
+                {selectedTicketType.description}
+              </p>
+            )}
+          </div>
 
           <div className="grid gap-3 text-sm">
             <div>
@@ -260,8 +360,8 @@ export default function EventDetail() {
               {createBooking.isPending
                 ? "Booking..."
                 : user
-                ? "Confirm booking"
-                : "Login to book"}
+                  ? "Confirm booking"
+                  : "Login to book"}
             </button>
 
             {createBooking.isSuccess && (
@@ -271,7 +371,8 @@ export default function EventDetail() {
             )}
             {createBooking.isError && (
               <p className="text-xs text-red-300 bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2">
-                Failed to book. Please try again.
+                {createBooking.error?.message ||
+                  "Failed to book. Please try again."}
               </p>
             )}
           </div>
