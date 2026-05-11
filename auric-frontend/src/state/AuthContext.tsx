@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { apiFetch } from "../lib/api";
 
-type User = { id: string; name: string; email: string } | null;
+type User = { id: string; name: string; email: string; authorities?: string[] } | null;
 type AuthCtx = {
   user: User;
   loading: boolean;
