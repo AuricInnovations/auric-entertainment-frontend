@@ -32,11 +32,6 @@ const TEAM: Member[] = [
         role: "Partner Alliance Executive",
         focus: "Secures sponsors and partners, and manages key external relationships.",
     },
-    {
-        name: "Hesara Kavinda",
-        role: "Event Executive",
-        focus: "Trusted partners for staging, rigging, sound, and lighting.",
-    },
 ];
 
 function initials(name: string) {
