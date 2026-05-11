@@ -12,6 +12,7 @@ import ContactSection from "./components/ContactSection";
 import AboutSection from "./components/AboutSection";
 import TeamSection from "./components/TeamSection";
 import Footer from "./components/Footer";
+import AdsterraBanner from "./components/AdsterraBanner";
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
@@ -65,6 +66,9 @@ export default function App() {
             <Hero play={!showIntro} />
           </div>
         </section>
+        
+        {/* Adsterra Banner */}
+        <AdsterraBanner />
 
         {/* EVENTS */}
         <section id="events" ref={eventsRef} className="px-4 pb-24">

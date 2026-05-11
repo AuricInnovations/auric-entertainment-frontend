@@ -38,6 +38,15 @@ export default function Footer() {
             <a href="#contact" className="hover:text-yellow-300 transition">
               Contact
             </a>
+            <span className="text-zinc-600">•</span>
+            <a 
+              href="https://www.profitablecpmratenetwork.com/zt5yz7nuyt?key=b9f66a2a6a431810cf70f948652dfee2" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-yellow-300 transition italic"
+            >
+              Promoted
+            </a>
           </div>
         </div>
       </div>
